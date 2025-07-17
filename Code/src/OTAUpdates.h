@@ -2,6 +2,7 @@
 #include <ElegantOTA.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <WiFi.h>
 
 //Server object
 AsyncWebServer server(81);
