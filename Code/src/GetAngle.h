@@ -1,14 +1,14 @@
-//library used for communication with the sensor
+//used for communication with the sensor
 //basic library for the arduino framework
 #include <Arduino.h>
 //used to help with the math in getting the angle from acceleration
 #include <math.h>
 //used for communication with the MPU
-#include <Adafruit_MPU6050.h>
 #include<Adafruit_LIS331HH.h>
 #include <Adafruit_Sensor.h>
-#define I2C_SDA 2
-#define I2C_SCL 1
+#define I2C_SDA 35
+#define I2C_SCL 36
+#define I2C_Freq 100000
 
 //int offset1 = 0;
 int offset2 = 0;
@@ -16,7 +16,8 @@ int offset2 = 0;
 float mpu1mag;
 float mpu2mag;
 
-Adafruit_MPU6050 mpu1;
+TwoWire I2CBus = TwoWire(0);
+Adafruit_LIS331HH mpu1 = Adafruit_LIS331HH();
 Adafruit_LIS331HH mpu2 = Adafruit_LIS331HH();
 
 
@@ -35,18 +36,26 @@ class GetAngle
     //also starts the I2C communication
     void start()
     {
-        Wire.begin(I2C_SDA, I2C_SCL);
-       if (!mpu1.begin()) {
-            while (1) {
+        I2CBus.begin(I2C_SDA, I2C_SCL, I2C_Freq);
+	//both sensors wont read. I am thinking this may be a hardware issue, as it is happening with both and I have tried using wire and twowire
+        //MPU1 setup
+	//this sensor is also having issues
+	/*
+        if(!mpu1.begin_I2C(0x19))
+        {
+            while(1)
+            {
                 delay(10);
             }
         }
-        //MPU1 setup
-        mpu1.setAccelerometerRange(MPU6050_RANGE_8_G);
-        mpu1.setGyroRange(MPU6050_RANGE_500_DEG);
-        mpu1.setFilterBandwidth(MPU6050_BAND_5_HZ);
+        mpu1.setRange(LIS331HH_RANGE_24_G);
+        mpu1.setDataRate(LIS331_DATARATE_1000_HZ);
+	*/
 
         //MPU2 setup
+	//we know that this sensor has an issue
+	//this is the sensor closer to the ESP32
+	/*
         if(!mpu2.begin_I2C())
         {
             while(1)
@@ -56,6 +65,8 @@ class GetAngle
         }
         mpu2.setRange(LIS331HH_RANGE_24_G);
         mpu2.setDataRate(LIS331_DATARATE_1000_HZ);
+	*/
+	
     }
 
     //recives the Rads that will get sent to the kinimatics function
@@ -110,7 +121,7 @@ class GetAngle
     {
         /* Get new sensor events with the readings */
         sensors_event_t event;
-        mpu2.getEvent(&event);
+        //mpu2.getEvent(&event);
 
 
         float accel = abs(sqrt(pow(event.acceleration.y, 2)/*+pow(event.acceleration.x, 2)*/)-offset2);

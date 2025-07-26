@@ -1,6 +1,5 @@
-//base library for the arduino framework
+/http://192.168.12.111:81/update/base library for the arduino framework
 #include <Arduino.h>
-//used to control the robot from the phone (working on the PS4 controler)
 //used for pwm to control the 3 ESCs for the drive
 #include <ESP32Servo.h>
 //used to communicate with the acceleromiter to get the angle
@@ -12,15 +11,16 @@
 //used to communicate with the Xbox controller
 #include <XboxSeriesXControllerESP32_asukiaaa.hpp>
 //pins that the ESCs are solderd to 
-#define ESCPin1 17
-#define ESCPin2 18
-#define LightPin 6
+#define ESCPin1 10
+#define ESCPin2 42
+#define LightPin1 48
+#define LightPin2 11
 
 
 //all Web interface stuff
 //used to host the web server
 
-//#include <WebInterface.h>
+#include <WebInterface.h>
 #include <OTAUpdates.h>
 
 //Change for the debug interface or OTA uploads
@@ -47,8 +47,8 @@ int LeftRight[2] = {50, 50};
 int spinSpeed = 50;
 
 //creating all the objects for the various librarys
-GetAngle angle;
-HeaderLED Head(LightPin);
+//GetAngle angle;
+HeaderLED Head(LightPin1);
 XboxSeriesXControllerESP32_asukiaaa::Core xboxController;
 
 // Sets the speed of the motor received from the int LeftRight array
@@ -78,6 +78,14 @@ void kinematics(float curentRads, float translationSpeed, float translationRads)
   LeftRight[0] = map(spinSpeed - sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed, 0, 100, 0, 50);
 }
 
+
+void conrollerRumble()
+{
+	XboxSeriesXHIDReportBuilder_asukiaaa::ReportBase repo;
+	xboxController.writeHIDReport(repo);
+	delay(2000);
+}
+
 //code here will run once when the robot turns on
 //used to setup the motors and controler
 void setup() 
@@ -88,9 +96,9 @@ void setup()
 	ESP32PWM::allocateTimer(0);
 	ESP32PWM::allocateTimer(1);
 
-  pinMode(LightPin, OUTPUT);
+  pinMode(LightPin1, OUTPUT);
 
-  angle.start();
+  //angle.start();
 	
   Serial.begin(9600);
 
@@ -116,7 +124,7 @@ void loop()
   xboxController.onLoop();
   float x = ((xboxController.xboxNotif.joyLVert- 32767.5) / 65525) * 2;
   float y = ((xboxController.xboxNotif.joyRVert - 32767.5) / 65525) * 2;
-  //Web1.Talk(x, y, angle.getSpeed(), xboxController.xboxNotif.btnLB, angle.knownRadius);
+  ////Web1.Talk(x, y, angle.getSpeed(), xboxController.xboxNotif.btnLB, angle.knownRadius);
   Web2.loop();
 
   //checks if th3e controler is connected
@@ -133,11 +141,11 @@ void loop()
         float stickSpeed = sqrt(pow(x, 2) + pow (y, 2));
         float stickRotation = atan2(y, x);
         //gets the kinematics based on the recived input from the controller
-        kinematics(angle.GetRads(), stickSpeed, stickRotation);
+        //kinematics(angle.GetRads(), stickSpeed, stickRotation);
         //sets the motor speed to the value gotten from the kinematics function
         setMotorSpeed();
         //makes the header LED blink at the right time
-        Head.checkLED(angle.GetRads());
+        //Head.checkLED(angle.GetRads());
       }
       //if the left bumper isnt pressed stop the robot
       else
@@ -156,18 +164,18 @@ void loop()
       //allows the user to reset the gyro and calibrate
       if (xboxController.xboxNotif.btnXbox)
       {
-        angle.Calibrate();
-        angle.ResetGyro();
+        //angle.Calibrate();
+        //angle.ResetGyro();
       }
       //adjust the radius for tuning
-      if(xboxController.xboxNotif.btnDirDown && angle.knownRadius > 0)
+      /*if(xboxController.xboxNotif.btnDirDown && angle.knownRadius > 0)
       {
         angle.knownRadius -= 0.00001;
       }
       if(xboxController.xboxNotif.btnDirUp)
       {
         angle.knownRadius += 0.00001;
-      }
+      }*/
     }
   }
   //blinks the LED and stops the motors if the controler is not connected
