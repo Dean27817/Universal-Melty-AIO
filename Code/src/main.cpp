@@ -1,4 +1,3 @@
-/http://192.168.12.111:81/update/base library for the arduino framework
 #include <Arduino.h>
 //used for pwm to control the 3 ESCs for the drive
 #include <ESP32Servo.h>
@@ -13,8 +12,8 @@
 //pins that the ESCs are solderd to 
 #define ESCPin1 10
 #define ESCPin2 42
-#define LightPin1 48
-#define LightPin2 11
+#define Header 48
+#define StatusLED 11
 
 
 //all Web interface stuff
@@ -47,8 +46,8 @@ int LeftRight[2] = {50, 50};
 int spinSpeed = 50;
 
 //creating all the objects for the various librarys
-//GetAngle angle;
-HeaderLED Head(LightPin1);
+GetAngle angle;
+HeaderLED Head(Header);
 XboxSeriesXControllerESP32_asukiaaa::Core xboxController;
 
 // Sets the speed of the motor received from the int LeftRight array
@@ -96,19 +95,24 @@ void setup()
 	ESP32PWM::allocateTimer(0);
 	ESP32PWM::allocateTimer(1);
 
-  pinMode(LightPin1, OUTPUT);
+  pinMode(Header, OUTPUT);
 
   //angle.start();
-	
+  
   Serial.begin(9600);
 
   //starts the speed controlers
   ESC1.attach(ESCPin1, minPulseWidth, maxPulseWidth);
   ESC2.attach(ESCPin2, minPulseWidth, maxPulseWidth);
 
+  LeftRight[0] = 0;
+  LeftRight[1] = 0;
+  setMotorSpeed();
+  delay(5000);
   LeftRight[0] = 50;
   LeftRight[1] = 50;
   setMotorSpeed();
+  delay(5000);
 
   //starts the connection to the controller
   xboxController.begin();

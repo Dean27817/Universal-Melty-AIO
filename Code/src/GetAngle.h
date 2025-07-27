@@ -37,26 +37,43 @@ class GetAngle
     void start()
     {
         I2CBus.begin(I2C_SDA, I2C_SCL, I2C_Freq);
+	int Address1 = 0;
+	byte busStatus;
+	for (int i2cAddress = 0x00; i2cAddress < 0x80; i2cAddress++)
+	  {
+	    Wire.beginTransmission(i2cAddress);
+	    busStatus = Wire.endTransmission();
+	    if (busStatus == 0x00)
+	    {
+	      Serial.print("I2C Device found at address: 0x");
+	      Serial.println(i2cAddress, HEX);
+	      Address1 = i2cAddress;
+	    }
+
+	    else
+	    {
+	      Serial.print("I2C Device not found at address: 0x");
+	      Serial.println(i2cAddress, HEX);
+	    }
+	  }
 	//both sensors wont read. I am thinking this may be a hardware issue, as it is happening with both and I have tried using wire and twowire
         //MPU1 setup
 	//this sensor is also having issues
-	/*
-        if(!mpu1.begin_I2C(0x19))
+        if(!mpu1.begin_I2C(Address1))
         {
             while(1)
             {
                 delay(10);
             }
         }
+	/*
         mpu1.setRange(LIS331HH_RANGE_24_G);
         mpu1.setDataRate(LIS331_DATARATE_1000_HZ);
-	*/
 
         //MPU2 setup
 	//we know that this sensor has an issue
 	//this is the sensor closer to the ESP32
-	/*
-        if(!mpu2.begin_I2C())
+        if(!mpu2.begin_I2C(0x18))
         {
             while(1)
             {
