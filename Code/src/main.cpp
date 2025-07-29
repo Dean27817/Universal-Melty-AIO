@@ -1,6 +1,4 @@
 #include <Arduino.h>
-//used for pwm to control the 3 ESCs for the drive
-#include <ESP32Servo.h>
 //used to communicate with the acceleromiter to get the angle
 #include <GetAngle.h>
 //used to make the LED show where the front of the robot is at all times
@@ -26,13 +24,6 @@
 //WebInterface Web1;
 OTAUpdates Web2;
 
-
-
-
-//creates the objects from the Servo library
-Servo ESC1;
-Servo ESC2;
-
 //the minimum and maximum frequencys that the ESCs will respond to
 const int minPulseWidth = 1000; // Minimum pulse width in microseconds (1ms)
 const int maxPulseWidth = 2000; // Maximum pulse width in microseconds (2ms)
@@ -54,17 +45,12 @@ XboxSeriesXControllerESP32_asukiaaa::Core xboxController;
 // It will then scale these to the pulse widths that can be sent to the ESCs
 void setMotorSpeed() 
 {
-  //takes the value passed (between 0 and 100) and maps it to the PWM value (0 to 180)
-  int esc1Speed = map(LeftRight[0], 0, 100, minPulseWidth, maxPulseWidth);
-  int esc2Speed = map(LeftRight[1], 0, 100, minPulseWidth, maxPulseWidth);
-  
-  // Ensure the values are within the acceptable range
-  esc1Speed = constrain(esc1Speed, minPulseWidth, maxPulseWidth);
-  esc2Speed = constrain(esc2Speed, minPulseWidth, maxPulseWidth);
+  // Map 0–100% → 1000–2000 µs → PWM value
+  int esc1Speed = map(LeftRight[0], 0, 100, 205, 410); // 1ms to 2ms at 50Hz 16-bit
+  int esc2Speed = map(LeftRight[1], 0, 100, 205, 410);
 
-  //writes the calculated speed to the pin as a PWM value
-  ESC1.writeMicroseconds(esc1Speed);
-  ESC2.writeMicroseconds(esc2Speed);
+  ledcWrite(0, esc1Speed);
+  ledcWrite(1, esc2Speed);
 }
 
 //used to determine the motor speeds that will be needed to be able to translate across the arena
@@ -91,28 +77,34 @@ void setup()
 {
   //Web1.start();
   Web2.start();
-  // Allow allocation of all timers
-	ESP32PWM::allocateTimer(0);
-	ESP32PWM::allocateTimer(1);
 
   pinMode(Header, OUTPUT);
 
   //angle.start();
   
   Serial.begin(9600);
+  // Setup PWM
+  const int pwmFreq = 50;
+  const int pwmRes = 12; // 16-bit resolution (65536 steps)
 
-  //starts the speed controlers
-  ESC1.attach(ESCPin1, minPulseWidth, maxPulseWidth);
-  ESC2.attach(ESCPin2, minPulseWidth, maxPulseWidth);
+  // Setup ESC1 (channel 0 on GPIO10)
+  ledcSetup(0, pwmFreq, pwmRes);
+  ledcAttachPin(ESCPin1, 0);
 
-  LeftRight[0] = 0;
-  LeftRight[1] = 0;
-  setMotorSpeed();
-  delay(5000);
-  LeftRight[0] = 50;
-  LeftRight[1] = 50;
-  setMotorSpeed();
-  delay(5000);
+  // Setup ESC2 (channel 1 on GPIO42)
+  ledcSetup(1, pwmFreq, pwmRes);
+  ledcAttachPin(ESCPin2, 1);
+
+  // Arm both motors
+  ledcWrite(0, 350); // 1.5 ms neutral
+  ledcWrite(1, 350); // 1.5 ms neutral
+  //LeftRight[1], LeftRight[0] = 50, 50;
+  //setMotorSpeed();
+  delay(2500);
+  //LeftRight[1], LeftRight[0] = 100, 100;
+  //setMotorSpeed();
+  //delay(2000);
+
 
   //starts the connection to the controller
   xboxController.begin();
@@ -160,7 +152,7 @@ void loop()
         float rightTank = ((float(xboxController.xboxNotif.joyRVert)) / float(65525));
         float leftTank= ((float(xboxController.xboxNotif.joyLVert)) / float(65525));
         //passes to the drive loop
-        LeftRight[1] = (y*15)+50;
+        LeftRight[1] = ((-y)*15)+50;
         LeftRight[0] = (x*15)+50;
         setMotorSpeed();
 

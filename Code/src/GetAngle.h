@@ -6,8 +6,8 @@
 //used for communication with the MPU
 #include<Adafruit_LIS331HH.h>
 #include <Adafruit_Sensor.h>
-#define I2C_SDA 35
-#define I2C_SCL 36
+#define I2C_SDA 8
+#define I2C_SCL 9
 #define I2C_Freq 100000
 
 //int offset1 = 0;

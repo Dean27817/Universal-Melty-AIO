@@ -179,9 +179,6 @@
  /home/dean/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/esp_hw_support/include/soc/esp32/spiram.h \
  /home/dean/.platformio/packages/framework-arduinoespressif32/cores/esp32/io_pin_remap.h \
  /home/dean/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
- .pio/libdeps/esp32-s3-devkitm-1/ESP32Servo/src/ESP32Servo.h \
- .pio/libdeps/esp32-s3-devkitm-1/ESP32Servo/src/ESP32PWM.h \
- /home/dean/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-ledc.h \
  src/GetAngle.h \
  .pio/libdeps/esp32-s3-devkitm-1/Adafruit\ LIS331/Adafruit_LIS331HH.h \
  .pio/libdeps/esp32-s3-devkitm-1/Adafruit\ LIS331/Adafruit_LIS331.h \
