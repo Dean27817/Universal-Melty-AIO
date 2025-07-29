@@ -59,8 +59,8 @@ void setMotorSpeed()
 //Link to the kinematics graph https://www.desmos.com/calculator/uxo47nulse
 void kinematics(float curentRads, float translationSpeed, float translationRads)
 {
-  LeftRight[1] = map(spinSpeed + sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed, 0, 100, 50, 100);
-  LeftRight[0] = map(spinSpeed - sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed, 0, 100, 0, 50);
+  LeftRight[1] = map(((spinSpeed + sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed)/2)+50, 0, 100, 50, 100);
+  LeftRight[0] = map(((spinSpeed + sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed)/2)+50, 0, 100, 0, 50);
 }
 
 
@@ -98,12 +98,7 @@ void setup()
   // Arm both motors
   ledcWrite(0, 350); // 1.5 ms neutral
   ledcWrite(1, 350); // 1.5 ms neutral
-  //LeftRight[1], LeftRight[0] = 50, 50;
-  //setMotorSpeed();
   delay(2500);
-  //LeftRight[1], LeftRight[0] = 100, 100;
-  //setMotorSpeed();
-  //delay(2000);
 
 
   //starts the connection to the controller
@@ -122,8 +117,9 @@ void loop()
   float y = ((xboxController.xboxNotif.joyRVert - 32767.5) / 65525) * 2;
   ////Web1.Talk(x, y, angle.getSpeed(), xboxController.xboxNotif.btnLB, angle.knownRadius);
   Web2.loop();
+  angle.loop();
 
-  //checks if th3e controler is connected
+  //checks if the controler is connected
   if(xboxController.isConnected())
   {
     //checks if the controler has been fully set up
@@ -137,11 +133,11 @@ void loop()
         float stickSpeed = sqrt(pow(x, 2) + pow (y, 2));
         float stickRotation = atan2(y, x);
         //gets the kinematics based on the recived input from the controller
-        //kinematics(angle.GetRads(), stickSpeed, stickRotation);
+        //kinematics(angle.getCurrentRads(), stickSpeed, stickRotation);
         //sets the motor speed to the value gotten from the kinematics function
         setMotorSpeed();
         //makes the header LED blink at the right time
-        //Head.checkLED(angle.GetRads());
+        //Head.checkLED(angle.getCurrentRads());
       }
       //if the left bumper isnt pressed stop the robot
       else
