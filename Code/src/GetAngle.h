@@ -10,7 +10,7 @@
 #define I2C_SCL 9
 #define I2C_Freq 100000
 
-//int offset1 = 0;
+int offset1 = 0;
 int offset2 = 0;
 
 float mpu1mag;
@@ -31,48 +31,28 @@ class GetAngle
     //meters
     double knownRadius = 0.0313;
     float foundRadius = 0;
+
     //initialized the class
-    //sets the distance from the center to the sensor in mm
     //also starts the I2C communication
     void start()
     {
+	//starts the I2C bus
         I2CBus.begin(I2C_SDA, I2C_SCL, I2C_Freq);
-	int Address1 = 0;
-	byte busStatus;
-	for (int i2cAddress = 0x00; i2cAddress < 0x80; i2cAddress++)
-	  {
-	    Wire.beginTransmission(i2cAddress);
-	    busStatus = Wire.endTransmission();
-	    if (busStatus == 0x00)
-	    {
-	      Serial.print("I2C Device found at address: 0x");
-	      Serial.println(i2cAddress, HEX);
-	      Address1 = i2cAddress;
-	    }
 
-	    else
-	    {
-	      Serial.print("I2C Device not found at address: 0x");
-	      Serial.println(i2cAddress, HEX);
-	    }
-	  }
-	//both sensors wont read. I am thinking this may be a hardware issue, as it is happening with both and I have tried using wire and twowire
-        //MPU1 setup
-	//this sensor is also having issues
-        if(!mpu1.begin_I2C(Address1))
+	//MPU1 setup
+	//the acceleromiter closer to the center
+        if(!mpu1.begin_I2C(0x19))
         {
             while(1)
             {
                 delay(10);
             }
         }
-	/*
         mpu1.setRange(LIS331HH_RANGE_24_G);
         mpu1.setDataRate(LIS331_DATARATE_1000_HZ);
 
         //MPU2 setup
-	//we know that this sensor has an issue
-	//this is the sensor closer to the ESP32
+	//this is the sensor further from the ESP32
         if(!mpu2.begin_I2C(0x18))
         {
             while(1)
@@ -82,71 +62,60 @@ class GetAngle
         }
         mpu2.setRange(LIS331HH_RANGE_24_G);
         mpu2.setDataRate(LIS331_DATARATE_1000_HZ);
-	*/
-	
     }
 
-    //recives the Rads that will get sent to the kinimatics function
-    float GetRads()
+
+    //gets the acceleration from the sensors and saves it to global variables
+    void getAccel()
     {
-        //gets the current uptime of the program in milliseconds
-        unsigned long currentTime = millis();
-        //finds the difference in seconds of the last check vs this one
-        float deltaTime = (currentTime - lastTime) / 1000.0;
+        //Get new sensor events with the readings
+        sensors_event_t event1;
+        mpu1.getEvent(&event1);
 
+        sensors_event_t event2;
+        mpu2.getEvent(&event2);
 
-        //gets the angle in radiens that it turned from the last check based on how long it has been spinning at a certain speed
-        //then adds that value to the total distance turned
-        currentRads += getSpeed() * deltaTime;
-        //makes sure the value dosnt go above or bellow 360 degrees
-        if (currentRads >= (2*PI))
-        {
-            currentRads -= (2*PI);
-        }
-        else if (currentRads < 0) 
-        {
-            currentRads += (2*PI);
-        }
-        lastTime = currentTime;
-        return currentRads;
+	//sets values
+        mpu1mag, mpu2mag = event1.acceleration.y-offset1, event2.acceleration.y-offset2;
     }
 
+    //it resets the gyro readings
+    //this function took me hours to write
+    //it may be my best written code ever
+    //it is the pinical of all code ever written
     void ResetGyro()
     {
         currentRads = 0;
     }
 
+    //averages a bunch of the readings togeather and will subtract them from the readings
     void Calibrate()
     {
-        //offset1 = 0;
+        offset1 = 0;
         offset2 = 0;
-        float tempOff = 0;
-        sensors_event_t a, g, temp, event;
+        float tempOff1 = 0;
+        float tempOff2 = 0;
         for(int i = 0; i<=1000; i++)
         {
-            //mpu1.getEvent(&a, &g, &temp); 
-            //mpu2.getEvent(&event);
-            //offset1 += sqrt(pow(a.acceleration.x, 2)+pow(a.acceleration.y, 2));
-            tempOff += getSpeed();
+	    getAccel();
+            tempOff1 += mpu1mag;
+            tempOff2 += mpu2mag;
         }
-        //offset1 = offset1/1000;
-        offset2 = tempOff/1000;
+        offset1 = tempOff1/1000;
+        offset2 = tempOff2/1000;
 
     }
 
-    float getSpeed()
+    float getCurrentRads()
     {
-        /* Get new sensor events with the readings */
-        sensors_event_t event;
-        //mpu2.getEvent(&event);
+	    return currentRads;
+    }
 
-
-        float accel = abs(sqrt(pow(event.acceleration.y, 2)/*+pow(event.acceleration.x, 2)*/)-offset2);
-        //finds the linear velocity both outer acceleromiters
-        double velocity1 = sqrt((accel/(knownRadius)));
-        //finds the angular velocity and averages both of them found with both accelleromiters seperatly
-        return(velocity1/(2*PI*(knownRadius)));
-        
+    void loop()
+    {
+	    getAccel();
+	    setRadius();
+	    accellToRads();
     }
 
 
@@ -157,6 +126,26 @@ class GetAngle
     //how far the robot has turned (in degrees)
     float currentRads = 0;
 
+    //function that dynamically finds the radius using the two acceleromiters
+    //accel1 should be the acceleromiter closer to the center, while accel2 is further
+    float setRadius()
+    {
+	float radius = (mpu1mag*knownRadius)/(mpu1mag-mpu2mag);
+	foundRadius = radius;
+	return radius;
+    }
+
+    //finds the angular velocity by averaging the velocitys found by each acceleromiter
+    float getAverageSpeed()
+    {
+	float angularVeloc1 = mpu1mag * foundRadius;
+	float angularVeloc2 = mpu2mag * (foundRadius + knownRadius);
+
+	float averageVeloc = (angularVeloc1 + angularVeloc2) / 2;
+	return averageVeloc;
+
+    }
+
     //takes in the data from the acceleromiter and returns the value of the degrees that the robot is at currently
     float accellToRads()
     {
@@ -165,10 +154,10 @@ class GetAngle
         //finds the difference in seconds of the last check vs this one
         float deltaTime = (currentTime - lastTime) / 1000.0;
 
+	//gets the speed of rotation and uses that along with time to find the displacment
+	float angularVeloc = getAverageSpeed();
+	currentRads += angularVeloc * deltaTime;
 
-        //gets the angle in radiens that it turned from the last check based on how long it has been spinning at a certain speed
-        //then adds that value to the total distance turned
-        currentRads += getSpeed() * deltaTime;
         //makes sure the value dosnt go above or bellow 360 degrees
         if (currentRads >= (2*PI))
         {
