@@ -27,6 +27,9 @@ OTAUpdates Web2;
 //the minimum and maximum frequencys that the ESCs will respond to
 const int minPulseWidth = 1000; // Minimum pulse width in microseconds (1ms)
 const int maxPulseWidth = 2000; // Maximum pulse width in microseconds (2ms)
+int deltaTime = 0;
+bool statusLEDState = true;
+bool serverState = false;
 
 //this is the array that will hold the values that will be passed between the drive and kinimatic functions
 //values between 0 and 100 will be used
@@ -60,7 +63,7 @@ void setMotorSpeed()
 void kinematics(float curentRads, float translationSpeed, float translationRads)
 {
   LeftRight[1] = map(((spinSpeed + sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed)/2)+50, 0, 100, 50, 100);
-  LeftRight[0] = map(((spinSpeed + sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed)/2)+50, 0, 100, 0, 50);
+  LeftRight[0] = map(((spinSpeed - sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed)/2)+50, 0, 100, 0, 50);
 }
 
 
@@ -76,11 +79,11 @@ void conrollerRumble()
 void setup() 
 {
   //Web1.start();
-  Web2.start();
 
   pinMode(Header, OUTPUT);
+  pinMode(StatusLED, OUTPUT);
 
-  //angle.start();
+  angle.start();
   
   Serial.begin(9600);
   // Setup PWM
@@ -99,6 +102,7 @@ void setup()
   ledcWrite(0, 350); // 1.5 ms neutral
   ledcWrite(1, 350); // 1.5 ms neutral
   delay(2500);
+  digitalWrite(StatusLED, HIGH);
 
 
   //starts the connection to the controller
@@ -116,8 +120,11 @@ void loop()
   float x = ((xboxController.xboxNotif.joyLVert- 32767.5) / 65525) * 2;
   float y = ((xboxController.xboxNotif.joyRVert - 32767.5) / 65525) * 2;
   ////Web1.Talk(x, y, angle.getSpeed(), xboxController.xboxNotif.btnLB, angle.knownRadius);
-  Web2.loop();
-  //angle.loop();
+  if(serverState)
+  {
+	  Web2.loop();
+  }
+  angle.loop();
 
   //checks if the controler is connected
   if(xboxController.isConnected())
@@ -133,12 +140,11 @@ void loop()
         float stickSpeed = sqrt(pow(x, 2) + pow (y, 2));
         float stickRotation = atan2(y, x);
         //gets the kinematics based on the recived input from the controller
-        //kinematics(angle.getCurrentRads(), stickSpeed, stickRotation);
+        kinematics(angle.getCurrentRads(), stickSpeed, stickRotation);
         //sets the motor speed to the value gotten from the kinematics function
-	LeftRight[0], LeftRight[1] = 0, 75;
         setMotorSpeed();
         //makes the header LED blink at the right time
-        //Head.checkLED(angle.getCurrentRads());
+        Head.checkLED(angle.getCurrentRads());
       }
       else if(xboxController.xboxNotif.btnRB)
       {
@@ -148,8 +154,9 @@ void loop()
         float stickRotation = atan2(y, x);
         //gets the kinematics based on the recived input from the controller
         //kinematics(angle.getCurrentRads(), stickSpeed, stickRotation);
+	LeftRight[0] = 75;
+	LeftRight[1] = 75;
         //sets the motor speed to the value gotten from the kinematics function
-	LeftRight[0], LeftRight[1] = 75, 0;
         setMotorSpeed();
         //makes the header LED blink at the right time
         //Head.checkLED(angle.getCurrentRads());
@@ -163,32 +170,50 @@ void loop()
         float rightTank = ((float(xboxController.xboxNotif.joyRVert)) / float(65525));
         float leftTank= ((float(xboxController.xboxNotif.joyLVert)) / float(65525));
         //passes to the drive loop
-        LeftRight[1] = ((-y)*15)+50;
-        LeftRight[0] = (x*15)+50;
+        LeftRight[1] = ((-y)*10)+50;
+        LeftRight[0] = (x*10)+50;
         setMotorSpeed();
 
       }
       //allows the user to reset the gyro and calibrate
       if (xboxController.xboxNotif.btnXbox)
       {
+  	Web2.start();
+	serverState = true;
         //angle.Calibrate();
         //angle.ResetGyro();
       }
       //adjust the radius for tuning
-      /*if(xboxController.xboxNotif.btnDirDown && angle.knownRadius > 0)
+      if(xboxController.xboxNotif.btnDirDown && angle.knownRadius > 0)
       {
         angle.knownRadius -= 0.00001;
       }
       if(xboxController.xboxNotif.btnDirUp)
       {
         angle.knownRadius += 0.00001;
-      }*/
+      }
     }
   }
   //blinks the LED and stops the motors if the controler is not connected
   else
   {
-    Head.blink();
+
+    //blinks the status LED every half second if the controller is not connected
+    deltaTime = deltaTime + millis();
+    if(deltaTime >= 500)
+    {
+	if(statusLEDState)
+	{
+		digitalWrite(StatusLED, LOW);
+		statusLEDState = false;
+	}
+	else if(!statusLEDState)
+	{
+		digitalWrite(StatusLED, HIGH);
+		statusLEDState = true;
+	}
+    }
+
     //stops the motor
     LeftRight[1] = 50;
     LeftRight[0] = 50;

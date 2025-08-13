@@ -33,36 +33,41 @@ class GetAngle
     float foundRadius = 0;
 
     //initialized the class
-    //also starts the I2C communication
+    //also starts the I2C communicationvoid 
     void start()
-    {
-	//starts the I2C bus
-        I2CBus.begin(I2C_SDA, I2C_SCL, I2C_Freq);
+	{
+	    // Initialize I2C bus
+	    I2CBus.begin(I2C_SDA, I2C_SCL, I2C_Freq);
 
-	//MPU1 setup
-	//the acceleromiter closer to the center
-        if(!mpu1.begin_I2C(0x19))
-        {
-            while(1)
-            {
-                delay(10);
-            }
-        }
-        mpu1.setRange(LIS331HH_RANGE_24_G);
-        mpu1.setDataRate(LIS331_DATARATE_1000_HZ);
+	    bool mpu1_found = false;
+	    bool mpu2_found = false;
 
-        //MPU2 setup
-	//this is the sensor further from the ESP32
-        if(!mpu2.begin_I2C(0x18))
-        {
-            while(1)
-            {
-                delay(10);
-            }
-        }
-        mpu2.setRange(LIS331HH_RANGE_24_G);
-        mpu2.setDataRate(LIS331_DATARATE_1000_HZ);
-    }
+	    // Try MPU1 at address 0x19 (accelerometer closer to center)
+	    if (mpu1.begin_I2C(0x19, &I2CBus))
+	    {
+		mpu1_found = true;
+		mpu1.setRange(LIS331HH_RANGE_24_G);
+		mpu1.setDataRate(LIS331_DATARATE_1000_HZ);
+	    }
+
+	    // Try MPU2 at address 0x18 (accelerometer further from center)
+	    if (mpu2.begin_I2C(0x18, &I2CBus))
+	    {
+		mpu2_found = true;
+		mpu2.setRange(LIS331HH_RANGE_24_G);
+		mpu2.setDataRate(LIS331_DATARATE_1000_HZ);
+	    }
+
+	    // If neither was found, hang here forever
+	    if (!mpu1_found && !mpu2_found)
+	    {
+		while (true)
+		{
+		    delay(1000);
+		}
+	    }
+	}
+
 
 
     //gets the acceleration from the sensors and saves it to global variables
