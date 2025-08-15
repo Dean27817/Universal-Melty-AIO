@@ -117,8 +117,8 @@ void loop()
 {
   //refreshes the input from the xbox
   xboxController.onLoop();
-  float x = ((xboxController.xboxNotif.joyLVert- 32767.5) / 65525) * 2;
-  float y = ((xboxController.xboxNotif.joyRVert - 32767.5) / 65525) * 2;
+  float x = 0;//((xboxController.xboxNotif.joyLVert- 32767.5) / 65525) * 2;
+  float y = 0;//((xboxController.xboxNotif.joyRVert - 32767.5) / 65525) * 2;
   ////Web1.Talk(x, y, angle.getSpeed(), xboxController.xboxNotif.btnLB, angle.knownRadius);
   if(serverState)
   {
@@ -133,7 +133,7 @@ void loop()
     if(!xboxController.isWaitingForFirstNotification())
     {
       //spins up the robot if the left bumper is pressed
-      if(xboxController.xboxNotif.btnLB)
+      if(xboxController.xboxNotif.btnRB)
       {
         x = ((xboxController.xboxNotif.joyRHori- 32767.5) / 65525) * 2;
         y = ((xboxController.xboxNotif.joyRVert - 32767.5) / 65525) * 2;
@@ -146,7 +146,7 @@ void loop()
         //makes the header LED blink at the right time
         Head.checkLED(angle.getCurrentRads());
       }
-      else if(xboxController.xboxNotif.btnRB)
+      else if(xboxController.xboxNotif.btnLB)
       {
         x = ((xboxController.xboxNotif.joyRHori- 32767.5) / 65525) * 2;
         y = ((xboxController.xboxNotif.joyRVert - 32767.5) / 65525) * 2;
@@ -161,7 +161,7 @@ void loop()
         //makes the header LED blink at the right time
         //Head.checkLED(angle.getCurrentRads());
       }
-      //if the left bumper isnt pressed stop the robot
+      //if left bumper isnt pressed stop the robot
       else
       {
         //turns on the LED
@@ -169,20 +169,29 @@ void loop()
         //takes the xbox stick inputs and turns them into values between 0 and 1
         float rightTank = ((float(xboxController.xboxNotif.joyRVert)) / float(65525));
         float leftTank= ((float(xboxController.xboxNotif.joyLVert)) / float(65525));
-        //passes to the drive loop
+        //passes to the drive function
         LeftRight[1] = ((-y)*10)+50;
         LeftRight[0] = (x*10)+50;
         setMotorSpeed();
 
       }
-      //allows the user to reset the gyro and calibrate
+      //connects the robot to the wifi
       if (xboxController.xboxNotif.btnXbox)
       {
+	LeftRight[0] = 50;
+	LeftRight[1] = 50;
+	setMotorSpeed();
   	Web2.start();
 	serverState = true;
-        //angle.Calibrate();
-        //angle.ResetGyro();
       }
+
+      //calibrates and resets the gyro
+      if(xboxController.xboxNotif.btnShare)
+      {
+        angle.Calibrate();
+        angle.ResetGyro();
+      }
+
       //adjust the radius for tuning
       if(xboxController.xboxNotif.btnDirDown && angle.knownRadius > 0)
       {
