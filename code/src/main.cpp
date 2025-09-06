@@ -129,6 +129,7 @@ void loop()
   //checks if the controler is connected
   if(xboxController.isConnected())
   {
+    digitalWrite(StatusLED, HIGH);
     //checks if the controler has been fully set up
     if(!xboxController.isWaitingForFirstNotification())
     {
@@ -209,7 +210,7 @@ void loop()
 
     //blinks the status LED every half second if the controller is not connected
     deltaTime = deltaTime + millis();
-    if(deltaTime >= 500)
+    if(deltaTime >= 1000)
     {
 	if(statusLEDState)
 	{
@@ -221,6 +222,7 @@ void loop()
 		digitalWrite(StatusLED, HIGH);
 		statusLEDState = true;
 	}
+	deltaTime - 0;
     }
 
     //stops the motor
