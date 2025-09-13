@@ -62,17 +62,14 @@ void setMotorSpeed()
 //Link to the kinematics graph https://www.desmos.com/calculator/uxo47nulse
 void kinematics(float curentRads, float translationSpeed, float translationRads)
 {
-  LeftRight[1] = map(((spinSpeed + sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed)/2)+50, 0, 100, 50, 100);
-  LeftRight[0] = map(((spinSpeed - sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed)/2)+50, 0, 100, 0, 50);
+  //provides the offset to the speeds that the two wheels should be turning
+  double offset = sin(curentRads-translationRads) * (100 - spinSpeed)*translationSpeed;
+	
+  //Uses the offsets and maps them to the speed that the wheels should go
+  LeftRight[1] = map(((spinSpeed + offset)), 0, 100, 50, 100);
+  LeftRight[0] = map(((spinSpeed - offset)), 0, 100, 50, 100);
 }
 
-
-void conrollerRumble()
-{
-	XboxSeriesXHIDReportBuilder_asukiaaa::ReportBase repo;
-	xboxController.writeHIDReport(repo);
-	delay(2000);
-}
 
 //code here will run once when the robot turns on
 //used to setup the motors and controler
