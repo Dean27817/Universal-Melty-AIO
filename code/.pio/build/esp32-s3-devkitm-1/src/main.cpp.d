@@ -319,4 +319,5 @@
  .pio/libdeps/esp32-s3-devkitm-1/ESPAsyncWebServer/src/AsyncEventSource.h \
  .pio/libdeps/esp32-s3-devkitm-1/ESPAsyncWebServer/src/AsyncWebSocket.h \
  .pio/libdeps/esp32-s3-devkitm-1/ESPAsyncWebServer/src/WebHandlerImpl.h \
- .pio/libdeps/esp32-s3-devkitm-1/ESPAsyncWebServer/src/WebResponseImpl.h
+ .pio/libdeps/esp32-s3-devkitm-1/ESPAsyncWebServer/src/WebResponseImpl.h \
+ src/kinimatics.h
