@@ -909,7 +909,7 @@ bool NimBLEDevice::init(const std::string& deviceName) {
         bt_cfg.mode         = ESP_BT_MODE_BLE;
         bt_cfg.ble_max_conn = CONFIG_BT_NIMBLE_MAX_CONNECTIONS;
 #   elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
-        bt_cfg.ble_max_act = CONFIG_BT_NIMBLE_MAX_CONNECTIONS;
+        bt_cfg.ble_max_act = MYNEWT_VAL(BLE_MAX_CONNECTIONS) + MYNEWT_VAL(BLE_ROLE_BROADCASTER) + MYNEWT_VAL(BLE_ROLE_OBSERVER);
 #   else
         bt_cfg.nimble_max_connections = CONFIG_BT_NIMBLE_MAX_CONNECTIONS;
 #   endif
@@ -1302,10 +1302,11 @@ bool NimBLEDevice::setDeviceName(const std::string& deviceName) {
 /**
  * @brief Set a custom callback for gap events.
  * @param [in] handler The function to call when gap events occur.
+ * @param [in] arg Argument to pass to the handler.
  * @returns
  */
-bool NimBLEDevice::setCustomGapHandler(gap_event_handler handler) {
-    int rc = ble_gap_event_listener_register(&m_listener, handler, NULL);
+bool NimBLEDevice::setCustomGapHandler(gap_event_handler handler, void* arg) {
+    int rc = ble_gap_event_listener_register(&m_listener, handler, arg);
     if (rc == BLE_HS_EALREADY) {
         NIMBLE_LOGI(LOG_TAG, "Already listening to GAP events.");
         return true;

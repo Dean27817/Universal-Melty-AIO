@@ -1,6 +1,47 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+##  [2.3.7] 2025-12-08
+
+## Fixed
+- Server created client instance will now receive notifications/indications from the peer.
+- Improper HCI delay when ACL buffers are full (esp32)
+- `NimBLEClient` disconnect event not triggered if the peer address doesn't match a connection.
+- Attribute value sizes now correctly calculated for types larger than 8 bits.
+- `NimBLERemoteCharacteristic::retrieveDescriptors` will now use the handle range of the characteristic.
+
+## Added
+- `NimBLECharacteristicCallbacks::onStatus` overload that takes a `NimBLEConnInfo&` parameter to indicate which client the status is for.
+
+## Changed
+- `NimBLEDevice::setCustomGapHandler` added a void pointer parameter to allow passing user data to the custom handler.
+
+## [2.3.6] 2025-09-05
+
+## Fixed
+- NimBLEAdvertisedDevice::isConnectable returning incorrect result.
+- Extended advertisements not reporting full data.
+
+## Added
+- Support up to 1650 bytes of advertisement with extended advertising.
+
+## [2.3.5] 2025-09-02
+
+## Fixed
+- esp32c3/s3 max connections not being properly applied.
+
+## [2.3.4] 2025-08-10
+
+## Fixed
+- `NimBLEClientCallbacks::OnConnectFail` not called when connection not established.
+- Removed invalid reference to refactored original examples in README.md.
+- Cleanup redefinition warnings for arduino core 3.3+.
+
+## [2.3.3] 2025-07-27
+
+## Fixed
+- Multiple definition errors for some functions with esp32c6/h2/c2 with Arduino core 3.3+.
+
 ## [2.3.2] 2025-06-27
 
 ## Fixed
