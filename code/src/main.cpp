@@ -10,13 +10,15 @@
 XboxSeriesXControllerESP32_asukiaaa::Core xbox;
 
 //motor objects and variables
-Motor motor1( 17, 0, 50, 0 );
-Motor motor2( 18, 1, 50, 0 );
+Motor motor1( 10, 0, 50, 0 );
+Motor motor2( 42, 1, 50, 0 );
 float motorSpeeds[2];
 
 //acceleromiter objects and variables
 Accel accel1;
+Accel accel2;
 float accel1Mag;
+float accel2Mag;
 float currentAngle;
 TwoWire I2CBus = TwoWire( 0 );
 // persistent angle offset adjustable by D-pad left/right
@@ -30,7 +32,7 @@ OTAUpdates OTA;
 bool wifiEnabled = 0;
 
 //heading LED objects
-LED header1( 6 );
+LED header1( 48 );
 
 // lock-free sequence counter and minimal shared snapshot so neither task ever blocks
 struct SharedState
@@ -46,12 +48,17 @@ void loop2( void *pvParameters );
 
 void setup() 
 {
+    //initialize the power pin to on
+    pinMode( 11, OUTPUT );
+    digitalWrite( 11, LOW );
 
     // Initialize hardware that requires Arduino core to be up
     kine.loadValues();
 
-    I2CBus.begin( 2, 1 );
+    //initialize the i2c bus
+    I2CBus.begin( 8, 9 );
     accel1.start( I2CBus, 0x18 );
+    accel2.start( I2CBus, 0x19 );
 
     // initialize objects that previously ran hardware calls in constructors
     motor1.begin();
@@ -212,9 +219,13 @@ void loop2( void *pvParameters )
     {
         //find the radial acceleration of both acceleromiters
         accel1Mag = accel1.getAccel();
+        accel2Mag = accel2.getAccel();
 
         //find the current angle based on the two accelerations
-        currentAngle = kine.findAngle( accel1Mag );
+        currentAngle = kine.findAngle( accel1Mag, accel2Mag );
+
+        //calibrate the radius to the center of rotation
+        kine.calibrateRadius( accel1Mag, accel2Mag );
 
         // publish a minimal snapshot using a sequence counter (non-blocking)
         __atomic_add_fetch(&seqlock_counter, 1, __ATOMIC_SEQ_CST); // become odd -> writer in progress
